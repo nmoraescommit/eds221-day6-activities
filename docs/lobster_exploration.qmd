@@ -1,0 +1,131 @@
+---
+title: "lobster_exploration"
+author: "NM"
+format: html
+editor_options: 
+  chunk_output_type: console
+---
+#Set-up
+```{r}
+library(here)
+library(tidyverse)
+library(janitor)
+
+lobsters <- read_csv(here("data","Lobster_Abundance_All_Years_20210412.csv"), 
+                     na = c("-99999", "")) %>% 
+  clean_names() %>% 
+  uncount(count)
+
+#uncount(count) multiplies by the number in count (has increased number of observations from 6309 to 9387)
+```
+  
+#Find counts and mean sizes by site & year
+```{r}
+#Create a ggplot graph of the number of total lobsters observed (y-axis) by year (x-axis) in the study, grouped (either aesthetically or by faceting) by site
+
+lobster_site_year <- lobsters %>%
+  group_by(site, year) %>%
+  summarize(mean_carapace = sum(size_mm, na.rm = TRUE), 
+            total_count = n())
+
+lobster_site_year_plot <- ggplot(data = lobster_site_year, aes(x = year, y = total_count, colour = site))+
+  geom_point()+
+  labs(x = "Year", y = "Total Count")
+
+lobster_site_year_plot
+
+```
+
+
+#ind the proportion of legal lobsters at each site for 2020
+```{r}
+
+lobster_legal <- lobsters %>%
+  filter(year == "2020")
+
+
+lobster_legal_count <- lobster_legal %>%
+  mutate(legality = case_when(size_mm < 79.76 ~ 'illegal',
+                             size_mm >= 79.76 ~ 'legal',
+                             TRUE ~ '')) %>%
+  group_by(site) %>% 
+  count(legality)
+
+#Create a stacked column graph
+
+stack_graph_legality <- ggplot(data = lobster_legal_count, aes(y = n, x = site, fill = legality)) + 
+    geom_col(position = "fill")
+
+stack_graph_legality
+
+```
+
+
+#Task 3: Random lobster wrangling
+```{r}
+#filter() practice
+#a
+
+filter_practice <- lobsters %>%
+  filter(site == c("IVEE","CARP","NAPL"))
+
+#b
+filter_practice <- lobsters %>%
+  filter(month == 8)
+
+#c
+filter_practice <- lobsters %>%
+  filter(site == "AQUE"| size_mm > 70)
+
+#d
+filter_practice <- lobsters %>%
+  filter(site != "NAPL")
+```
+
+```{r}
+#group_by() %>% summarize() practice
+
+#e
+group_sum_practice <- lobsters %>%
+  group_by(site) %>%
+  summarize(mean(size_mm) & sd(size_mm))
+
+#Find the maximum carapace length by site and month.
+#f
+group_sum_practice <- lobsters %>%
+  group_by(site, month) %>%
+  summarise(max_length = max(size_mm))
+
+```
+
+#mutate() practice
+```{r}
+#g
+mutate_practice <- lobsters %>%
+  mutate(cara_cm = size_mm/10)
+
+#h
+mutate_practice <- lobsters %>%
+  mutate(tolower(site))
+
+#i
+mutate_practice <- lobsters %>%
+  mutate(as.character(area))
+```
+
+#case_when() practice
+```{r}
+#j
+case_practice <- lobsters %>%
+  mutate(size_bin = case_when(size_mm <= 70 ~ 'small',
+                             size_mm > 70 ~ 'large',
+                             TRUE ~ ''))
+
+#k
+case_practice <- lobsters %>%
+  mutate(designation = case_when(site %in% c("IVEE","NAPL") ~ 'MPA',
+                             site %in% c("AQUE", "CARP", "MOHK") ~ 'Not MPA',
+                             TRUE ~ ''))
+  
+```
+
